@@ -16,7 +16,7 @@ input,select{font-family:inherit;font-size:1.1rem;padding:10px 14px;border-radiu
 .hand{display:flex;gap:6px;flex-wrap:wrap}
 .el{width:68px;min-height:82px;border-radius:12px;text-align:center;font-weight:700;border:2px solid #fff;box-shadow:0 3px 8px #0001;padding:4px 2px;overflow:hidden}
 .el b{font-size:1.4rem;display:block}.el small{font-size:.68rem;display:block}
-.g0{background:var(--p)}.g1{background:var(--b)}.g2{background:var(--y)}
+.pick{cursor:pointer}.sel{outline:3px solid #ff7fb0;transform:translateY(-6px)}.g0{background:var(--p)}.g1{background:var(--b)}.g2{background:var(--y)}
 table{width:100%;border-collapse:collapse;font-size:.9rem}td,th{padding:4px 6px;border-bottom:1px dashed var(--l);text-align:left}
 .me{outline:3px solid #ffb8d6}
 #modal{position:fixed;inset:0;background:#5b4b6b66;display:none;align-items:center;justify-content:center;z-index:9}
@@ -63,16 +63,16 @@ function adv(t,pen){nz(t);const p=t.ps[t.turn],h=t.hands[p];
 function mv(fn){root.child('tables/'+MYT).transaction(t=>{if(!t||t.st!=='play'||t.ps[t.turn]!==ID)return;nz(t);return fn(t)===false?undefined:t})}
 const draw=()=>mv(t=>{if(t.dr)return false;if(t.deck.length)t.hands[ID].push(t.deck.pop());t.dr=1});
 const endT=()=>mv(t=>{if(!t.dr)return false;adv(t,1)});
-function lay(i){closeM();SEL='';const r=R[i];mv(t=>{if(!t.dr)return false;const h=t.hands[ID].slice();for(const c of r.c){const k=h.indexOf(c);if(k<0)return false;h.splice(k,1)}t.hands[ID]=h;(t.laid[ID]=t.laid[ID]||[]).push(r.f);t.ld++;lg(t,'📣 '+t.nm[ID]+' เอ่ยชื่อ “'+r.th+'” ('+r.f+') แล้ววางไพ่ '+r.c.length+' ใบ')})}
+function lay(i){closeM();SELI=[];const r=R[i];mv(t=>{if(!t.dr)return false;const h=t.hands[ID].slice();for(const c of r.c){const k=h.indexOf(c);if(k<0)return false;h.splice(k,1)}t.hands[ID]=h;(t.laid[ID]=t.laid[ID]||[]).push(r.f);t.ld++;lg(t,'📣 '+t.nm[ID]+' เอ่ยชื่อ “'+r.th+'” ('+r.f+') แล้ววางไพ่ '+r.c.length+' ใบ')})}
 function sayR(i){try{speechSynthesis.cancel();[[R[i].th.replace(/\(.*?\)/g,''),'th-TH'],[R[i].en,'en-US']].forEach(([x,l])=>{const u=new SpeechSynthesisUtterance(x);u.lang=l;speechSynthesis.speak(u)})}catch(e){}}
 function ask(i){const r=R[i];$('#modal').innerHTML='<div><h2>📣 เอ่ยชื่อให้เพื่อนฟัง!</h2><h1 style="margin:.2em">'+esc(r.th)+'</h1><h3>'+r.f+' · '+esc(r.en)+'</h3><p>ใช้ไพ่: '+fmt(r.c)+'</p><button class="sm" onclick="sayR('+i+')">🔊 ฟังเสียงอ่าน</button><p>อ่านชื่อสารประกอบออกเสียงดัง ๆ ก่อน แล้วกดยืนยัน</p><div class="row" style="justify-content:center"><button class="ok" onclick="lay('+i+')">🗣️ เอ่ยแล้ว วางไพ่!</button><button onclick="closeM()">ยกเลิก</button></div></div>';$('#modal').style.display='flex'}
 
 // ----- นักเรียน -----
 function join(){const n=$('#nm').value.trim().slice(0,14);if(!n)return alert('พิมพ์ชื่อเล่นก่อนนะ');if(M.phase&&M.phase!=='lobby')return alert('เกมเริ่มไปแล้ว รอรอบหน้านะ');
  root.child('cnt').transaction(c=>(c||0)<100?(c||0)+1:undefined,(e,ok)=>{if(!ok)return alert('ห้องเต็มแล้ว (สูงสุด 100 คน)');const r=root.child('players').push({name:n,ts:Date.now()});ID=r.key;localStorage.ccgId=ID;attach();render()})}
-let SEL='';
-function picker(){return '<select id="sel" onchange="SEL=this.value"><option value="">— เลือกสารประกอบที่จะวาง —</option>'+R.map((r,i)=>'<option value="'+i+'"'+(SEL===''+i?' selected':'')+'>'+r.f+' · '+esc(r.th)+'</option>').join('')+'</select><p></p><button class="go" onclick="tryLay()">🗣️ เอ่ยชื่อและวางไพ่</button>'}
-function tryLay(){if(SEL==='')return alert('เลือกสารประกอบก่อนนะ');const i=+SEL,r=R[i],h=(T[MYT]&&T[MYT].hands&&T[MYT].hands[ID])||[];if(!can(h,r.c))return alert('ไพ่ในมือยังไม่ครบสำหรับ '+r.f+' ลองคิดดูอีกทีนะ 🤔');ask(i)}
+let SELI=[];
+function tog(i){const k=SELI.indexOf(i);if(k<0)SELI.push(i);else SELI.splice(k,1);render()}
+function build(){const t=T[MYT];if(!t||!SELI.length)return alert('คลิกเลือกการ์ดในมือก่อนนะ');const h=(t.hands&&t.hands[ID])||[];const k=JSON.stringify(SELI.map(i=>h[i]).filter(Boolean).sort());const i=R.findIndex(r=>JSON.stringify(r.c.slice().sort())===k);if(i<0)return alert('การ์ดที่เลือกยังไม่ใช่สารประกอบในเกมนี้ ลองคิดใหม่อีกที 🤔');ask(i)}
 function studentView(){
  if(!ID)return '<div class="card" style="text-align:center"><h2>🧪 เข้าร่วมเกม</h2><p>พิมพ์ชื่อเล่นของเธอ</p><input id="nm" maxlength="14" placeholder="ชื่อเล่น"><p></p><button class="go" onclick="join()">เข้าร่วม ✨</button></div>';
  if(!P[ID])return '<div class="card">กำลังโหลด...</div>';
@@ -83,12 +83,13 @@ function studentView(){
  let s='<div class="card"><div class="row"><h3 style="margin:0">🎲 โต๊ะ '+MYT.slice(1)+'</h3><span class="chip">🎴 กอง '+t.deck.length+' ใบ</span>'+(t.fin>=0?'<span class="chip">⏰ รอบสุดท้าย (วางอย่างเดียว ไม่จั่ว)</span>':'')+'</div>';
  s+=t.ps.map(p=>'<div class="chip '+(p===me?'me':'')+'" style="'+(play&&p===cur?'background:#ffb8d6':'')+'">'+(play&&p===cur?'👉 ':'')+esc(t.nm[p])+' · '+t.hands[p].length+' ใบ'+(t.laid[p]?'<br><small>✅ '+t.laid[p].join(' ')+'</small>':'')+'</div>').join('')+'</div>';
  if(!play){const L=rank(t);s+='<div class="card"><h2>🏁 จบเกม!</h2>'+winners(t)+'<table>'+L.map((x,i)=>'<tr class="'+(x.p===me?'me':'')+'"><td>'+(['🥇','🥈','🥉'][i]||i+1)+'</td><td>'+esc(x.n)+'</td><td>เลขอะตอมรวม '+x.z+'</td><td>'+x.c+' ใบ</td></tr>').join('')+'</table></div>'}
- s+='<div class="card"><h3>🃏 ไพ่ในมือ ('+h.length+') · เลขอะตอมรวม '+zs(h)+'</h3><div class="hand">'+(h.slice().sort((a,b)=>Z[a].z-Z[b].z).map(x=>'<div class="el g'+Z[x].g+'"><b>'+x+'</b><small>'+Z[x].n+'</small><small>Z='+Z[x].z+'</small></div>').join('')||'<i>ไม่มีไพ่แล้ว 🎉</i>')+'</div></div>';
+ if(!(mine&&t.dr))SELI=[];SELI=SELI.filter(i=>i<h.length);
+ s+='<div class="card"><h3>🃏 ไพ่ในมือ ('+h.length+') · เลขอะตอมรวม '+zs(h)+'</h3><div class="hand">'+(h.map((x,i)=>[x,i]).sort((a,b)=>Z[a[0]].z-Z[b[0]].z||a[1]-b[1]).map(([x,i])=>'<div class="el g'+Z[x].g+(SELI.includes(i)?' sel':'')+((mine&&t.dr)?' pick" onclick="tog('+i+')':'')+'"><b>'+x+'</b><small>'+Z[x].n+'</small><small>Z='+Z[x].z+'</small></div>').join('')||'<i>ไม่มีไพ่แล้ว 🎉</i>')+'</div></div>';
  if(play){
   if(!mine)s+='<div class="card">⏳ รอ <b>'+esc(t.nm[cur])+'</b> เล่นอยู่...</div>';
   else if(!t.dr)s+='<div class="card" style="text-align:center"><h3>ถึงตาของเราแล้ว! 💖</h3><button class="go" onclick="draw()">🎴 จั่วไพ่ 1 ใบ</button></div>';
-  else s+='<div class="card"><h3>✨ วางสารประกอบ (ต้องเอ่ยชื่อทุกครั้ง)</h3><p>ลองคิดดูว่าไพ่ในมือสร้างสารประกอบอะไรได้บ้าง (ดูตารางรวมที่แท็บ “สารประกอบ”) แล้วเลือกสูตรที่จะวาง</p>'+picker()+'<hr><button class="ok" onclick="endT()">✅ จบเทิร์น</button>'+(t.ld||t.fin>=0?'':' <small>(ถ้าไม่วางเลย จะจั่วเพิ่ม '+t.pen+' ใบ)</small>')+'</div>'}
- return s+'<div class="card"><h3>📣 ความเคลื่อนไหว</h3>'+(t.log.slice().reverse().map(x=>'<div>'+esc(x)+'</div>').join('')||'<i>—</i>')+'</div>'}
+  else s+='<div class="card"><h3>✨ วางสารประกอบ (ต้องเอ่ยชื่อทุกครั้ง)</h3><p>คลิกการ์ดในมือที่จะรวมเป็นสารประกอบ แล้วกดยืนยัน (เลือกแล้ว '+SELI.length+' ใบ: '+SELI.map(i=>h[i]).join(' ')+')</p><button class="go" onclick="build()">🗣️ ยืนยัน แล้วเอ่ยชื่อ</button> <button class="sm" onclick="SELI=[];render()">ล้างที่เลือก</button>'+'<hr><button class="ok" onclick="endT()">✅ จบเทิร์น</button>'+(t.ld||t.fin>=0?'':' <small>(ถ้าไม่วางเลย จะจั่วเพิ่ม '+t.pen+' ใบ)</small>')+'</div>'}
+ return s+'<div class="card"><h3>📣 ความเคลื่อนไหว</h3>'+(t.log.slice().reverse().map(x=>'<div>'+esc(x)+'</div>').join('')||'<i>—</i>')+'</div>'+guideView()}
 
 // ----- คุณครู -----
 function login(){if($('#pw').value.trim()===PW){OK=true;sessionStorage.ccgOk='1';hostAttach();render()}else alert('รหัสผ่านไม่ถูกต้อง')}
@@ -115,7 +116,7 @@ function hostView(){
   return '<div class="card"><div class="row"><h3 style="margin:0">โต๊ะ '+k.slice(1)+'</h3><span class="chip">กอง '+t.deck.length+'</span>'+(done?'<span class="chip">🏁 จบ</span>':'<span class="chip">ตา: '+esc(t.nm[t.ps[t.turn]])+'</span><button class="sm" onclick="skip(\''+k+'\')">⏭️ ข้ามเทิร์น</button>')+'</div><table>'+t.ps.map(p=>'<tr><td>'+esc(t.nm[p])+'</td><td>'+t.hands[p].length+' ใบ</td><td>Z รวม '+zs(t.hands[p])+'</td><td>วางแล้ว '+(t.laid[p]||[]).length+' สูตร</td></tr>').join('')+'</table>'+(done?winners(t):'')+'</div>'}).join('')}
 
 // ----- กติกา + คู่มือสารประกอบ -----
-function rulesView(){return '<div class="card"><h3>📜 กติกา</h3><ol><li>ระบบจัดโต๊ะให้ โต๊ะละ 3–5 คน แต่ละโต๊ะมีกอง 150 ใบของตัวเอง แจกคนละ 5 ใบ</li><li>ถึงตาเรา: <b>จั่วไพ่ทีละ 1 ใบ</b></li><li>คิดเองว่าไพ่ในมือสร้างสารประกอบอะไรได้ (ดูตารางรวมทุกสูตรที่แท็บ “สารประกอบ”) ถ้าไพ่ครบตามสูตร วางสารประกอบได้ (วางได้หลายสูตรในเทิร์นเดียว) — <b>ทุกครั้งที่วางต้องเอ่ยชื่อสารประกอบออกเสียง</b> แล้วกดยืนยัน</li><li>ถ้าเทิร์นนั้นวางไม่ได้เลย จะจั่วเพิ่มตามที่คุณครูตั้ง</li><li>กองหมด → ทุกคนที่เหลือได้เล่นอีก 1 เทิร์น (วางอย่างเดียว ไม่จั่ว)</li><li>นับ <b>เลขอะตอมรวมของไพ่ที่เหลือในมือ ต่ำสุดชนะ</b> · เสมอ: ไพ่น้อยกว่าชนะ → ไพ่ใบหนักสุดเบากว่าชนะ → ชนะร่วม</li></ol><p>💡 ดูสูตรทั้งหมดได้ที่แท็บ “สารประกอบ”</p></div>'}
+function rulesView(){return '<div class="card"><h3>📜 กติกา</h3><ol><li>ระบบจัดโต๊ะให้ โต๊ะละ 3–5 คน แต่ละโต๊ะมีกอง 150 ใบของตัวเอง แจกคนละ 5 ใบ</li><li>ถึงตาเรา: <b>จั่วไพ่ทีละ 1 ใบ</b></li><li>คิดเองว่าไพ่ในมือสร้างสารประกอบอะไรได้ (ดูตารางรวมทุกสูตรด้านล่างกระดาน) แล้ว<b>คลิกการ์ดในมือ</b>ที่จะรวมกัน เช่น H สองใบ + O หนึ่งใบ = H₂O จากนั้นวางสารประกอบได้ (วางได้หลายสูตรในเทิร์นเดียว) — <b>ทุกครั้งที่วางต้องเอ่ยชื่อสารประกอบออกเสียง</b> แล้วกดยืนยัน</li><li>ถ้าเทิร์นนั้นวางไม่ได้เลย จะจั่วเพิ่มตามที่คุณครูตั้ง</li><li>กองหมด → ทุกคนที่เหลือได้เล่นอีก 1 เทิร์น (วางอย่างเดียว ไม่จั่ว)</li><li>นับ <b>เลขอะตอมรวมของไพ่ที่เหลือในมือ ต่ำสุดชนะ</b> · เสมอ: ไพ่น้อยกว่าชนะ → ไพ่ใบหนักสุดเบากว่าชนะ → ชนะร่วม</li></ol><p>💡 ดูสูตรทั้งหมดได้ที่แท็บ “สารประกอบ”</p></div>'}
 function guideView(){
  const h=null;let L=R.map((r,i)=>({r,i}));
  if(FILT==='can'&&h)L=L.filter(x=>can(h,x.r.c));else if(['ง่าย','ปานกลาง','ยาก','ตำนาน'].includes(FILT))L=L.filter(x=>x.r.t===FILT);
